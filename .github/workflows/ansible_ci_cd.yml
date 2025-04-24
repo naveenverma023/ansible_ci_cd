@@ -1,0 +1,85 @@
+name: Ansible CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+    id_rsa: ${{ secrets.id_rsa }}
+
+jobs:
+  ansible-ci:
+    name: Ansible CI Pipeline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Create SSH key from GitHub Secret
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ env.id_rsa }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Setup Python and Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip
+          pip3 install ansible ansible-lint
+
+      - name: Lint Ansible Playbooks
+        run: ansible-lint playbook.yml
+
+      - name: Syntax Check
+        run: ansible-playbook playbook.yml --syntax-check -i inventory.ini
+
+      - name: Inventory Validation
+        run: ansible-inventory -i inventory.ini --list
+
+      - name: Dry Run - Check Mode
+        run: ansible-playbook playbook.yml --check -i inventory.ini
+
+      - name: Save Artifacts
+        run: |
+          mkdir artifacts
+          ansible-playbook playbook.yml --check -i inventory.ini > artifacts/dryrun.log
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dry-run-output
+          path: artifacts/dryrun.log
+
+  ansible-cd:
+    name: Ansible CD Pipeline
+    needs: ansible-ci
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip
+          pip3 install ansible
+
+      - name: Run Integration Test (Ping Hosts)
+        run: ansible all -i inventory.ini -m ping
+
+      - name: Deploy Playbook
+        run: ansible-playbook playbook.yml -i inventory.ini
+
+      - name: Post-Deployment Verification
+        run: |
+          echo "Verifying Web Service"
+          curl -s http://your-azure-vm-public-ip || echo "Service Check Failed"
+
+      - name: Rollback Handler (Manual Trigger Example)
+        if: failure()
+        run: ansible-playbook rollback.yml -i inventory.ini

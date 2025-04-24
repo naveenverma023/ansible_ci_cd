@@ -1,0 +1,30 @@
+---
+- name: Install and configure NGINX on Azure Ubuntu VM
+  hosts: webservers
+  become: true
+
+  tasks:
+    - name: Ensure APT cache is updated
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install NGINX
+      apt:
+        name: nginx
+        state: present
+
+    - name: Ensure NGINX is running
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Deploy custom index.html (optional)
+      copy:
+        dest: /var/www/html/index.html
+        content: |
+          <html>
+            <head><title>Welcome</title></head>
+            <body><h1>Hello from Ansible Deployed NGINX!</h1></body>
+          </html>

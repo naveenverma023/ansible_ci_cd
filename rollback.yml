@@ -1,0 +1,22 @@
+---
+- name: Rollback NGINX installation and restore previous state
+  hosts: webservers
+  become: true
+
+  tasks:
+    - name: Stop NGINX service
+      service:
+        name: nginx
+        state: stopped
+        enabled: no
+
+    - name: Remove NGINX package
+      apt:
+        name: nginx
+        state: absent
+        purge: yes
+
+    - name: Remove default HTML page if present
+      file:
+        path: /var/www/html/index.html
+        state: absent
