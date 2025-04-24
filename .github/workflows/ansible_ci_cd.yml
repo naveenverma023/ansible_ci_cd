@@ -83,7 +83,7 @@ jobs:
       - name: Post-Deployment Verification
         run: |
           echo "Verifying Web Service"
-          curl -s http://your-azure-vm-public-ip || echo "Service Check Failed"
+          curl -s http://20.49.20.4 || echo "Service Check Failed"
 
       - name: Rollback Handler (Manual Trigger Example)
         if: failure()
