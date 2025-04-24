@@ -6,6 +6,7 @@ on:
 
 env:
     id_rsa: ${{ secrets.id_rsa }}
+    ANSIBLE_HOST_KEY_CHECKING: False
 
 jobs:
   ansible-ci:
