@@ -62,6 +62,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Create SSH key from GitHub Secret
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ env.id_rsa }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
       - name: Setup Ansible
         run: |
           sudo apt update
